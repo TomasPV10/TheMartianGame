@@ -26,6 +26,7 @@ public class MartianGameFrame extends javax.swing.JFrame {
 
     private CardLayout cardLayout;
     private JPanel mainContainer;
+    private JPanel glassOverlay;
 
     // Componenti Schermata Menu
     private JTextField txtPlayerName;
@@ -43,6 +44,7 @@ public class MartianGameFrame extends javax.swing.JFrame {
     private JProgressBar oxygenBar;
     private JList<String> jList1;
     private MapPanel mapPanel;
+    private JButton btnExit; // Pulsante Esci di gioco
 
     // Gestione Audio Globale
     private Clip currentAudioClip;
@@ -72,6 +74,17 @@ public class MartianGameFrame extends javax.swing.JFrame {
         setTitle("ARES MISSION - MARS SURVIVAL HARDCORE");
         setSize(1150, 800);
         setLocationRelativeTo(null);
+
+        // Configurazione GlassPane per overlay grigio/scuro
+        glassOverlay = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                g.setColor(new Color(10, 10, 10, 190)); // Grigio/Nero semi-trasparente
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        glassOverlay.setOpaque(false);
+        setGlassPane(glassOverlay);
 
         cardLayout = new CardLayout();
         mainContainer = new JPanel(cardLayout);
@@ -330,8 +343,25 @@ public class MartianGameFrame extends javax.swing.JFrame {
         });
         oxygenBar.setPreferredSize(new Dimension(160, 26));
 
+        // Pulsante ESCI presente nella schermata di gioco durante la partita
+        btnExit = createBtn("🚪 ESCI", e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Sei sicuro di voler abbandonare la missione ed uscire dal gioco?",
+                "CONFERMA USCITA",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+            );
+            if (confirm == JOptionPane.YES_OPTION) {
+                System.exit(0);
+            }
+        });
+        btnExit.setBackground(new Color(180, 40, 40));
+        btnExit.setForeground(Color.WHITE);
+
         topRightPanel.add(lblO2);
         topRightPanel.add(oxygenBar);
+        topRightPanel.add(btnExit);
 
         topPanel.add(lblCurrentRoom, BorderLayout.CENTER);
         topPanel.add(topRightPanel, BorderLayout.EAST);
@@ -498,68 +528,73 @@ public class MartianGameFrame extends javax.swing.JFrame {
     // --- FINESTRA IN SOVRAIMPRESSIONE (FINE PARTITA) ---
     
     private void showEndGameDialog(boolean isVictory) {
-        JDialog dialog = new JDialog(this, "Esito Missione", true);
-        dialog.setSize(380, 260);
-        dialog.setLocationRelativeTo(this);
-        dialog.setUndecorated(true); 
-        dialog.getRootPane().setBorder(BorderFactory.createLineBorder(isVictory ? new Color(0, 255, 120) : new Color(255, 50, 50), 3));
+    JDialog dialog = new JDialog(this, "Esito Missione", true);
+    dialog.setSize(380, 290); // Dimensione regolata per contenere 3 pulsanti
+    dialog.setLocationRelativeTo(this);
+    dialog.setUndecorated(true); 
+    dialog.getRootPane().setBorder(BorderFactory.createLineBorder(isVictory ? new Color(0, 255, 120) : new Color(255, 50, 50), 3));
 
-        JPanel panel = new JPanel(new BorderLayout(10, 15));
-        panel.setBackground(new Color(20, 20, 20));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+    JPanel panel = new JPanel(new BorderLayout(10, 10));
+    panel.setBackground(new Color(20, 20, 20));
+    panel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
 
-        JLabel title = new JLabel(isVictory ? "🏆 VITTORIA!" : "💀 GAME OVER", SwingConstants.CENTER);
-        title.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30));
-        title.setForeground(isVictory ? new Color(0, 255, 120) : new Color(255, 50, 50));
-        panel.add(title, BorderLayout.NORTH);
+    JLabel title = new JLabel(isVictory ? "🏆 VITTORIA!" : "💀 GAME OVER", SwingConstants.CENTER);
+    title.setFont(new Font(Font.MONOSPACED, Font.BOLD, 28));
+    title.setForeground(isVictory ? new Color(0, 255, 120) : new Color(255, 50, 50));
+    panel.add(title, BorderLayout.NORTH);
 
-        String subText = isVictory ? "Segnale inviato.\nSoccorsi in arrivo." : "Ossigeno esaurito.\nMissione fallita.";
-        JTextArea subtitle = new JTextArea(subText);
-        subtitle.setEditable(false);
-        subtitle.setOpaque(false);
-        subtitle.setForeground(Color.WHITE);
-        subtitle.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 15));
-        subtitle.setFocusable(false);
-        subtitle.setLineWrap(true);
-        subtitle.setWrapStyleWord(true);
-        // Centrare il testo in una JTextArea
-        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-        subtitle.setMargin(new Insets(10, 10, 10, 10));
-        
-        panel.add(subtitle, BorderLayout.CENTER);
+    String subText = isVictory ? "Segnale inviato.\nSoccorsi in arrivo." : "Ossigeno esaurito.\nMissione fallita.";
+    JTextArea subtitle = new JTextArea(subText);
+    subtitle.setEditable(false);
+    subtitle.setOpaque(false);
+    subtitle.setForeground(Color.WHITE);
+    subtitle.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 14));
+    subtitle.setFocusable(false);
+    subtitle.setLineWrap(true);
+    subtitle.setWrapStyleWord(true);
+    subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+    subtitle.setMargin(new Insets(5, 5, 5, 5));
+    
+    panel.add(subtitle, BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 10, 10));
-        buttonPanel.setBackground(new Color(20, 20, 20));
+    // Pannello impostato a 3 righe per contenere Riavvia, Menu ed Esci
+    JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 8, 8));
+    buttonPanel.setBackground(new Color(20, 20, 20));
 
-        JButton btnRestart = createBtn("🔄 RIAVVIA MISSIONE", e -> {
-            dialog.dispose();
-            restartGame();
-        });
-        
-        JButton btnMenu = createBtn("🏠 TORNA AL MENU", e -> {
-            dialog.dispose();
-            returnToMenu();
-        });
-        
-        JButton btnExit = createBtn("🚪 ESCI", e -> System.exit(0));
+    JButton btnRestart = createBtn("🔄 RIAVVIA MISSIONE", e -> {
+        dialog.dispose();
+        restartGame();
+    });
+    
+    JButton btnMenu = createBtn("🏠 TORNA AL MENU", e -> {
+        dialog.dispose();
+        returnToMenu();
+    });
 
-        buttonPanel.add(btnRestart);
-        buttonPanel.add(btnMenu);
-        buttonPanel.add(btnExit);
+    JButton btnExitPopup = createBtn("🚪 ESCI DAL GIOCO", e -> {
+        System.exit(0);
+    });
 
-        panel.add(buttonPanel, BorderLayout.SOUTH);
-        dialog.add(panel);
+    buttonPanel.add(btnRestart);
+    buttonPanel.add(btnMenu);
+    buttonPanel.add(btnExitPopup);
 
-        // Ritardo di 1.5 secondi per permettere allo screen shake e al typewriter di terminare
-        Timer dialogTimer = new Timer(1500, e -> {
-            dialog.setVisible(true);
-        });
-        dialogTimer.setRepeats(false);
-        dialogTimer.start();
-    }
+    panel.add(buttonPanel, BorderLayout.SOUTH);
+    dialog.add(panel);
+
+    // Ritardo di 1.5 secondi per permettere allo screen shake e al typewriter di terminare
+    Timer dialogTimer = new Timer(1500, e -> {
+        getGlassPane().setVisible(true); // Oscura il gioco sotto
+        dialog.setVisible(true);
+    });
+    dialogTimer.setRepeats(false);
+    dialogTimer.start();
+}
 
     private void restartGame() {
+        getGlassPane().setVisible(false); // <--- Toglie l'oscuramento dietro
         jTextFieldInput.setEnabled(true);
+        if (btnExit != null) btnExit.setEnabled(true);
         isGameOverPlayed = false;
         isVictoryPlayed = false;
         isAlarmActive = false;
@@ -572,6 +607,7 @@ public class MartianGameFrame extends javax.swing.JFrame {
     }
     
     private void returnToMenu() {
+        getGlassPane().setVisible(false); // <--- Toglie l'oscuramento dietro
         stopAudio();
         isGameOverPlayed = false;
         isVictoryPlayed = false;
@@ -583,6 +619,7 @@ public class MartianGameFrame extends javax.swing.JFrame {
         jTextArea1.setText("");
         jTextFieldInput.setText("");
         jTextFieldInput.setEnabled(true);
+        if (btnExit != null) btnExit.setEnabled(true);
         oxygenBar.setValue(100);
         oxygenBar.setForeground(Color.GREEN);
         
@@ -694,6 +731,7 @@ public class MartianGameFrame extends javax.swing.JFrame {
 
         if (game.isEnd()) {
             jTextFieldInput.setEnabled(false);
+            if (btnExit != null) btnExit.setEnabled(false); // Disabilita il pulsante esci di gioco a fine partita
             if (blinkTimer.isRunning()) blinkTimer.stop();
             
             if (o2 <= 0) {
